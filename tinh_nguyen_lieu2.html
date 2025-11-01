@@ -9,6 +9,9 @@
     <!-- Tải Tailwind CSS để tạo giao diện đẹp và đáp ứng -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- === THÊM MỚI: Thư viện đọc file Excel (SheetJS) === -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <!-- Tải Firebase SDKs (Module Imports) -->
     <script type="module">
         // Import các hàm bạn cần từ SDKs
@@ -23,18 +26,18 @@
         // SỬA LỖI (Đã thêm dòng này):
         window.firebaseFirestoreModule = firebaseFirestoreModule; 
 
-        // --- CẤU HÌNH FIREBASE CỦA BẠN (ĐÃ ĐƯỢC THÊM) ---
-        // Cấu hình ứng dụng web Firebase của bạn
-        // SỬA LỖI: Gán vào window để script ở body có thể dùng
-        window.firebaseConfig = {
-          apiKey: "AIzaSyD1W08tbeT1durWvUj2i6BoRyCtrT9eXtE",
-          authDomain: "quan-ly-thuc-don.firebaseapp.com",
-          projectId: "quan-ly-thuc-don",
-          storageBucket: "quan-ly-thuc-don.firebasestorage.app",
-          messagingSenderId: "333327496945",
-          appId: "1:333327496945:web:6593a84dedeaf37d3f9b50",
-          measurementId: "G-BGQ7MBH0V4"
-        };
+        // --- CẤU HÌNH FIREBASE (ĐÃ SỬA ĐỂ DÙNG BIẾN MÔI TRƯỜNG) ---
+        // Sử dụng biến môi trường do nền tảng cung cấp
+        window.firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { 
+                apiKey: "YOUR_API_KEY", 
+                authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_PROJECT_ID.appspot.com",
+                messagingSenderId: "YOUR_SENDER_ID",
+                appId: "YOUR_APP_ID"
+              };
         // ---------------------------------------------
 
         // Khởi tạo Firebase và các dịch vụ
@@ -57,34 +60,101 @@
             background-color: #f7f7f7;
             padding: 1rem;
         }
-        /* Custom style to handle closing dropdown when clicking outside */
-        .dish-option:hover {
-            background-color: #e0e7ff; /* indigo-100 */
-        }
-        /* Bổ sung để hiển thị bảng ngang trên mobile (nếu cần thiết, nhưng đã cố gắng tránh) */
-        .table-responsive {
-            overflow-x: auto;
-        }
-        /* Modal Backdrop */
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        /* Modal Content */
-        .modal-content {
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        /* Tùy chỉnh cho dropdown trong khu vực chỉnh sửa */
-        .norm-select-container {
-            max-height: 12rem; /* Giới hạn chiều cao cho dropdown danh sách món */
-            overflow-y: auto;
-        }
-        /* Bổ sung class cho dropdown nguyên liệu */
+        /* ... existing style rules ... */
         .ingredient-select-container {
             max-height: 10rem; /* Giới hạn chiều cao cho dropdown nguyên liệu */
             overflow-y: auto;
             /* Đảm bảo nó nổi lên trên các input khác */
             z-index: 20; 
+        }
+
+        /* === THÊM MỚI: CSS CHO IN ẤN === */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+                font-family: 'Times New Roman', Times, serif; /* Font chuẩn cho in ấn */
+            }
+            /* Ẩn tất cả các phần tử không muốn in */
+            .no-print, 
+            #norms-section, 
+            #daily-menu-section .flex, /* Ẩn các khối nút */
+            #results-section h2 div, /* Ẩn khối nút của kết quả */
+            #message-box,
+            #llm-modal {
+                display: none !important;
+            }
+
+            /* Chỉ định vùng được in */
+            .printable-section {
+                display: none !important;
+            }
+
+            /* Khi in menu */
+            body.printing-menu #daily-menu-section {
+                display: block !important;
+            }
+            body.printing-menu #daily-menu-section .table-responsive {
+                display: block !important;
+            }
+            body.printing-menu #daily-menu-section h2,
+            body.printing-menu #daily-menu-section table {
+                display: block !important;
+            }
+            /* Ẩn cột Số suất và Xóa khi in menu */
+            body.printing-menu #daily-menu-table-body input,
+            body.printing-menu #daily-menu-table-body button,
+            body.printing-menu thead th:nth-child(2),
+            body.printing-menu thead th:nth-child(3),
+            body.printing-menu tbody td:nth-child(2),
+            body.printing-menu tbody td:nth-child(3) {
+                display: none !important;
+            }
+            body.printing-menu tbody td {
+                font-size: 11pt; /* Cỡ chữ A5 */
+            }
+            body.printing-menu h2 {
+                font-size: 14pt;
+                text-align: center;
+            }
+             body.printing-menu #menu-date {
+                display: none; /* Ẩn input ngày */
+             }
+
+
+            /* Khi in kết quả */
+            body.printing-results #results-section {
+                display: block !important;
+            }
+            body.printing-results #results-section #results-table-view {
+                display: block !important;
+            }
+            body.printing-results #results-section h2,
+            body.printing-results #results-section table {
+                display: block !important;
+            }
+            body.printing-results #results-list-view {
+                display: none !important; /* Luôn dùng bảng khi in */
+            }
+            body.printing-results #results-title-header span {
+                display: block; /* Hiển thị ngày tháng rõ ràng */
+                text-align: center;
+                font-size: 12pt;
+                margin-top: 5px;
+            }
+             body.printing-results h2 {
+                font-size: 14pt;
+                text-align: center;
+             }
+             body.printing-results tbody td {
+                font-size: 11pt;
+             }
+
+            /* Thiết lập chung cho khổ A5 */
+            @page {
+                size: A5 portrait;
+                margin: 1cm;
+            }
         }
     </style>
 </head>
@@ -146,10 +216,28 @@
                     </div>
                 </div>
 
+                <!-- === THÊM MỚI: CÁC NÚT EXPORT === -->
+                <div class="my-4 p-3 bg-gray-50 rounded-lg border flex flex-col sm:flex-row gap-2 justify-center">
+                    <button onclick="window.exportFullNorms()" class="text-xs sm:text-sm bg-green-100 text-green-700 hover:bg-green-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Xuất Toàn Bộ Định Mức (Excel)
+                    </button>
+                    <button onclick="window.exportDishList()" class="text-xs sm:text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        Xuất DS Món Ăn (Excel)
+                    </button>
+                    <button onclick="window.exportIngredientList()" class="text-xs sm:text-sm bg-yellow-100 text-yellow-700 hover:bg-yellow-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Xuất DS Nguyên Liệu (Excel)
+                    </button>
+                </div>
+                <!-- === KẾT THÚC CÁC NÚT EXPORT === -->
+
+
                 <!-- Form chỉnh sửa/thêm món ăn -->
                 <div id="add-edit-form" class="space-y-3 p-3 bg-white rounded-lg border border-gray-200 hidden">
                     <h3 id="form-title" class="font-bold text-lg text-indigo-700">Chọn món để chỉnh sửa định mức</h3>
-                    <input type="hidden" id="current-norm-dish-name" value=""> 
+                    <!-- XÓA BỎ: Input hidden `current-norm-dish-name` đã bị xóa, chúng ta sẽ đọc trực tiếp từ ô search -->
                     
                     <!-- Vùng nhập nguyên liệu -->
                     <div id="new-ingredient-inputs" class="space-y-4"></div>
@@ -164,7 +252,7 @@
                         <button id="save-update-button" onclick="window.dbModule.saveNorms()" class="flex-grow bg-green-500 text-white p-2 rounded-md hover:bg-green-600 transition duration-150 text-sm">
                             Lưu / Cập Nhật Định Mức
                         </button>
-                        <button onclick="window.deleteNorm(document.getElementById('current-norm-dish-name').value)" id="delete-norm-button" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition duration-150 text-sm w-full sm:w-28 hidden">
+                        <button onclick="window.deleteNorm(document.getElementById('norm-dish-search').value)" id="delete-norm-button" class="bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition duration-150 text-sm w-full sm:w-28 hidden">
                             Xóa Món
                         </button>
                         <button onclick="window.toggleNormsManagement(false)" class="w-full sm:w-28 bg-gray-300 text-gray-700 p-2 rounded-md hover:bg-gray-400 transition duration-150 text-sm">
@@ -179,7 +267,7 @@
 
 
         <!-- KHU VỰC 2: THỰC ĐƠN NGÀY (Daily Menu) -->
-        <div class="bg-white p-3 sm:p-4 rounded-lg shadow-lg mb-8 border border-gray-200">
+        <div id="daily-menu-section" class="bg-white p-3 sm:p-4 rounded-lg shadow-lg mb-8 border border-gray-200">
             <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
                 <span class="flex items-center">📋 Thực Đơn Ngày</span>
                 <!-- Thêm input chọn ngày -->
@@ -189,7 +277,7 @@
             </h2>
             
             <!-- Input để thêm món vào thực đơn (Responsive layout) -->
-            <div class="flex flex-col space-y-3 mb-4">
+            <div class="flex flex-col space-y-3 mb-4 no-print">
                 <!-- KHỐI CHỌN MÓN CÓ TÌM KIẾM -->
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                     <div class="relative flex-grow">
@@ -232,12 +320,31 @@
             </div>
 
             <!-- Nút Đặt lại và Nút Gemini -->
-            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0 mb-4">
+            <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0 mb-4 no-print">
                 <!-- NÚT MỚI: GỢI Ý THỰC ĐƠN -->
                 <button onclick="window.generateMenuSuggestion()" id="generate-summary-btn" class="text-xs sm:text-sm bg-indigo-100 text-indigo-700 hover:bg-indigo-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
                     <span class="mr-1">✨</span> Gợi ý Thực đơn
                 </button>
                 <!-- END NÚT MỚI -->
+
+                <!-- === NÚT MỚI: IMPORT EXCEL === -->
+                <label class="text-xs sm:text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto cursor-pointer">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Import Excel
+                    <input type="file" id="excel-file-input" class="hidden" accept=".xlsx, .xls, .csv" onchange="window.handleFileUpload(event)">
+                </label>
+                <!-- === KẾT THÚC NÚT MỚI === -->
+
+                <!-- === THÊM MỚI: NÚT XUẤT VÀ IN THỰC ĐƠN === -->
+                <button onclick="window.exportDailyMenu()" class="text-xs sm:text-sm bg-green-100 text-green-700 hover:bg-green-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Xuất Thực Đơn (Excel)
+                </button>
+                <button onclick="window.printDailyMenu()" class="text-xs sm:text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                </button>
+                <!-- === KẾT THÚC NÚT MỚI === -->
+
 
                 <button onclick="window.resetDailyMenu()" class="text-xs sm:text-sm bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-md transition duration-150 flex items-center justify-center w-full sm:w-auto">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m15.356 2H20v-5m-5.074 8.751A8.001 8.001 0 0119.418 15m-15.356-2A8.001 8.001 0 0019.418 15m-15.356-2H4v5"></path></svg>
@@ -265,19 +372,24 @@
         </div>
 
         <!-- KHU VỰC 3: KẾT QUẢ TÍNH TOÁN (Results) -->
-        <div class="bg-yellow-50 p-3 sm:p-4 rounded-lg shadow-lg border border-yellow-300">
+        <div id="results-section" class="bg-yellow-50 p-3 sm:p-4 rounded-lg shadow-lg border border-yellow-300">
             <h2 class="text-lg sm:text-xl font-semibold text-yellow-800 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0" id="results-title-header">
                 🛒 Tổng Nguyên Liệu Cần Thiết Cho Ngày
                 <!-- Nút Export và Nút Gemini và Nút View Toggle -->
-                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto no-print">
                     <button onclick="window.toggleResultsView()" id="toggle-view-btn" class="bg-gray-200 text-gray-700 text-xs sm:text-sm px-3 py-1 rounded-md hover:bg-gray-300 transition duration-150 shadow-md w-full sm:w-auto flex items-center justify-center">
                         <!-- Icon và Text sẽ được cập nhật bằng JS -->
                     </button>
                     <button onclick="window.generateShoppingListNotes()" id="generate-notes-btn" class="bg-yellow-700 text-white text-xs sm:text-sm px-3 py-1 rounded-md hover:bg-yellow-800 transition duration-150 shadow-md w-full sm:w-auto">
                         <span class="mr-1">✨</span> Gợi ý Mua sắm
                     </button>
-                    <button onclick="window.exportResultsToCSVWithBOM()" class="bg-yellow-600 text-white text-xs sm:text-sm px-3 py-1 rounded-md hover:bg-yellow-700 transition duration-150 shadow-md w-full sm:w-auto">
-                        Xuất File (.csv - Hỗ trợ TV)
+                    <!-- === CHỈNH SỬA NÚT CSV THÀNH EXCEL === -->
+                    <button onclick="window.exportResultsToExcel()" class="bg-yellow-600 text-white text-xs sm:text-sm px-3 py-1 rounded-md hover:bg-yellow-700 transition duration-150 shadow-md w-full sm:w-auto">
+                        Xuất Tổng NL (Excel)
+                    </button>
+                    <!-- === THÊM MỚI: NÚT IN KẾT QUẢ === -->
+                    <button onclick="window.printResults()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs sm:text-sm px-3 py-1 rounded-md transition duration-150 shadow-md w-full sm:w-auto flex items-center justify-center">
+                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                     </button>
                 </div>
             </h2>
@@ -317,13 +429,18 @@
         
         // SỬA LỖI: Lấy các hàm từ các module đã gán vào window
         const { initializeApp } = window.firebaseAppModule; 
-        const { getAuth, signInAnonymously } = window.firebaseAuthModule;
+        // SỬA LỖI: Lấy thêm hàm signInWithCustomToken
+        const { getAuth, signInAnonymously, signInWithCustomToken } = window.firebaseAuthModule;
         // SỬA LỖI: Đảm bảo firebaseFirestoreModule đã được gán (đã sửa ở head)
-        const { getFirestore, doc, onSnapshot, setDoc, enableNetwork } = window.firebaseFirestoreModule;
+        // SỬA LỖI: Lấy thêm setLogLevel
+        const { getFirestore, doc, onSnapshot, setDoc, enableNetwork, setLogLevel } = window.firebaseFirestoreModule;
 
         // --- CẤU HÌNH FIREBASE (LẤY TỪ <HEAD>) ---
         // Biến window.firebaseConfig đã được khởi tạo trong <head>
         // Biến window.db và window.auth cũng đã được khởi tạo trong <head>
+        
+        // Bật log chi tiết (hữu ích cho debug)
+        setLogLevel('debug');
         
         // --- CƠ SỞ DỮ LIỆU VÀ ĐỊNH NGHĨA ---
         
@@ -405,22 +522,34 @@
 
         // --- MODULE XỬ LÝ DATABASE (FIRESTORE) ---
         window.dbModule = (function() {
-            // SỬA LỖI: Truy cập window.firebaseConfig
-            const appId = window.firebaseConfig.projectId || 'default-app-id'; 
+            // SỬA LỖI: Sử dụng __app_id từ biến môi trường
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const docRef = doc(window.db, "artifacts", appId, "public/data/norms/master_list");
 
             // 1. Lưu Định mức (Ghi lên Firestore)
             async function saveNorms() {
-                const currentDishName = document.getElementById('current-norm-dish-name').value.trim();
-                const isEditing = editingDishName !== null;
+                // === THAY ĐỔI LOGIC LẤY TÊN ===
+                // Lấy tên gốc (lúc tải form) và tên mới (từ ô input)
+                const oldName = editingDishName; 
+                const newName = document.getElementById('norm-dish-search').value.trim();
+                const isEditing = oldName !== null;
+                const isRename = isEditing && oldName !== newName;
+                // === KẾT THÚC THAY ĐỔI ===
 
-                if (!currentDishName) {
+                if (!newName) {
                     window.showMessage("Lỗi: Vui lòng chọn món ăn hoặc nhập tên món mới trước khi lưu.", 'error');
                     return;
                 }
 
-                if (!isEditing && currentDishName in window.norms) {
-                    window.showMessage(`Món ăn '${currentDishName}' đã tồn tại. Vui lòng chỉnh sửa hoặc xóa món cũ.`, 'error');
+                // Kiểm tra nếu tạo mới mà bị trùng
+                if (!isEditing && newName in window.norms) {
+                    window.showMessage(`Món ăn '${newName}' đã tồn tại. Vui lòng chỉnh sửa hoặc xóa món cũ.`, 'error');
+                    return;
+                }
+
+                // Kiểm tra nếu đổi tên mà bị trùng
+                if (isRename && newName in window.norms) {
+                    window.showMessage(`Lỗi: Tên món mới '${newName}' đã tồn tại. Không thể đổi tên.`, 'error');
                     return;
                 }
 
@@ -463,7 +592,12 @@
                 }
                 
                 // Cập nhật biến global 'norms'
-                window.norms[currentDishName] = newNorm; 
+                // === THAY ĐỔI LOGIC LƯU ===
+                window.norms[newName] = newNorm; // Thêm hoặc cập nhật tên mới
+                if (isRename) {
+                    delete window.norms[oldName]; // Xóa tên cũ nếu là đổi tên
+                }
+                // === KẾT THÚC THAY ĐỔI ===
                 
                 // GHI LÊN FIRESTORE
                 try {
@@ -472,9 +606,17 @@
                         console.error("Lỗi nghiêm trọng: window.norms là undefined trước khi lưu.");
                         window.norms = DEFAULT_NORMS; // Khởi tạo lại
                     }
-                    await setDoc(docRef, { norms: window.norms }, { merge: false }); // Ghi đè toàn bộ
-                    window.showMessage(`Định mức món '${currentDishName}' đã được CẬP NHẬT (Cloud) thành công!`);
+                    await setDoc(docRef, { norms: window.norms }, { merge: false }); // Ghi đè toàn bộ (đã bao gồm xóa/đổi tên)
+                    window.showMessage(`Định mức món '${newName}' đã được CẬP NHẬT (Cloud) thành công!`);
                     
+                    // === THÊM MỚI: CẬP NHẬT DAILY MENU NẾU ĐỔI TÊN ===
+                    if (isRename) {
+                        dailyMenu = dailyMenu.map(item => item.dish === oldName ? { ...item, dish: newName } : item);
+                        saveDataLocal(); // Cập nhật menu local
+                        window.renderMenu(); // Render lại menu ngay lập tức
+                    }
+                    // === KẾT THÚC THÊM MỚI ===
+
                     window.resetNormsForm(); 
                     window.renderAll(); // renderAll sẽ tự động chạy vì onSnapshot
 
@@ -537,9 +679,14 @@
         async function initializeDataSync() {
             const statusDiv = document.getElementById('connection-status');
             try {
-                // Đăng nhập ẩn danh
-                await signInAnonymously(window.auth);
-                console.log("Đăng nhập ẩn danh thành công.");
+                // SỬA LỖI: Sử dụng token_auth hoặc signInAnonymously
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(window.auth, __initial_auth_token);
+                    console.log("Đăng nhập bằng Custom Token thành công.");
+                } else {
+                    await signInAnonymously(window.auth);
+                    console.log("Đăng nhập ẩn danh thành công.");
+                }
                 
                 // Bắt đầu lắng nghe dữ liệu từ Firestore
                 await window.dbModule.loadNorms();
@@ -565,6 +712,8 @@
             }
         }
 
+
+        // === BỔ SUNG CÁC HÀM TIỆN ÍCH BỊ THIẾU ===
 
         // --- HÀM HIỂN THỊ THÔNG BÁO VÀ MODAL ---
         
@@ -736,11 +885,12 @@
         }
         
         window.parseIngredientKey = function(key) {
-            const match = key.match(/(.*)\s*(\([^\)]+\))$/);
+            const match = key.match(/(.*)\s*\(([^\)]+)\)$/); // Đã sửa: Thêm + sau [^\)]
             if (match) {
-                return { name: match[1].trim(), unit: match[2].replace(/[()]/g, '') };
+                return { name: match[1].trim(), unit: match[2].trim() }; // Đã sửa: match[2] và .trim()
             }
-            return { name: key, unit: UNITS[0].replace(/[()]/g, '') }; 
+            // Fallback nếu không có dấu ngoặc
+            return { name: key.trim(), unit: 'g' }; // Mặc định là 'g' nếu không tìm thấy
         }
 
         // --- LOGIC XỬ LÝ DATE VÀ EXPORT ---
@@ -814,8 +964,11 @@
             }
         }
 
+        // === KẾT THÚC BỔ SUNG ===
 
-        window.exportResultsToCSVWithBOM = function() {
+
+        // === THAY ĐỔI: TỪ CSV SANG EXCEL ===
+        window.exportResultsToExcel = function() {
             const dateInput = document.getElementById('menu-date');
             const menuDate = dateInput.value || new Date().toISOString().split('T')[0]; 
             const results = window.calculateTotalIngredients();
@@ -825,32 +978,31 @@
                 return;
             }
 
-            let csvContent = "Nguyên Liệu,Số Lượng (Gốc),Đơn Vị (Gốc),Số Lượng (Quy Đổi),Đơn Vị (Quy Đổi)\r\n";
+            const dataToExport = [];
             const ingredientsArray = Object.entries(results).sort((a, b) => a[0].localeCompare(b[0], 'vi'));
 
             ingredientsArray.forEach(([ingredientWithUnit, quantity]) => {
                 const { name: ingredientName, unit } = window.parseIngredientKey(ingredientWithUnit);
                 const { convertedQuantity, convertedUnit } = window.getConvertedUnit(unit, quantity);
-                const formattedQuantity = Number.isInteger(quantity) ? quantity.toString() : quantity.toFixed(2); 
-                const formattedConvertedQuantity = Number.isInteger(convertedQuantity) ? convertedQuantity.toString() : convertedQuantity.toFixed(2);
-                const row = `"${ingredientName}",${formattedQuantity},"${unit}",${formattedConvertedQuantity},"${convertedUnit}"`;
-                csvContent += row + "\r\n";
+                
+                dataToExport.push({
+                    "Nguyên Liệu": ingredientName,
+                    "Số Lượng (Gốc)": quantity,
+                    "Đơn Vị (Gốc)": unit,
+                    "Số Lượng (Quy Đổi)": convertedQuantity,
+                    "Đơn Vị (Quy Đổi)": convertedUnit
+                });
             });
 
-            const bom = "\uFEFF"; 
-            const encodedCsvContent = bom + csvContent;
-            const csvBlob = new Blob([encodedCsvContent], { type: 'text/csv;charset=utf-8;' });
-            const dataUri = URL.createObjectURL(csvBlob);
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            // Tự động điều chỉnh độ rộng cột
+            ws['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, `Tong Nguyen Lieu ${menuDate}`);
             
-            const link = document.createElement("a");
-            link.setAttribute("href", dataUri);
-            link.setAttribute("download", `nguyen_lieu_thuc_don_${menuDate}.csv`); 
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(dataUri); 
-
-            window.showMessage(`Đã xuất file nguyen_lieu_thuc_don_${menuDate}.csv thành công!`);
+            // Ghi file
+            XLSX.writeFile(wb, `Tong_Nguyen_Lieu_${menuDate}.xlsx`);
+            window.showMessage(`Đã xuất file Tong_Nguyen_Lieu_${menuDate}.xlsx thành công!`);
         }
 
 
@@ -872,27 +1024,27 @@
             editingDishName = null;
             document.getElementById('norm-dish-search').value = '';
             document.getElementById('form-title').textContent = 'Chọn món để chỉnh sửa định mức';
-            document.getElementById('current-norm-dish-name').value = '';
+            // XÓA: Dòng 'current-norm-dish-name' đã bị xóa
             document.getElementById('new-ingredient-inputs').innerHTML = '';
             document.getElementById('add-edit-form').classList.add('hidden');
         }
 
         window.loadNormsForm = function(dishName) {
             document.getElementById('add-edit-form').classList.remove('hidden');
-            document.getElementById('current-norm-dish-name').value = dishName;
+            // XÓA: Dòng 'current-norm-dish-name' đã bị xóa
             document.getElementById('new-ingredient-inputs').innerHTML = '';
 
             const normData = window.norms[dishName];
             
             if (normData) {
-                editingDishName = dishName;
+                editingDishName = dishName; // LƯU TÊN GỐC
                 document.getElementById('form-title').textContent = `Chỉnh Sửa Định Mức: ${dishName}`;
                 Object.entries(normData).forEach(([key, quantity]) => {
                     window.addIngredientInput(key, quantity);
                 });
                 document.getElementById('delete-norm-button').classList.remove('hidden');
             } else {
-                editingDishName = null;
+                editingDishName = null; // ĐÂY LÀ MÓN MỚI
                 document.getElementById('form-title').textContent = `Thêm Món Mới: ${dishName}`;
                 window.addIngredientInput(); 
                 document.getElementById('delete-norm-button').classList.add('hidden');
@@ -982,8 +1134,10 @@
             inputGroup.className = 'flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 ingredient-group relative'; // Thêm relative
             
             const { name: ingredientName, unit: ingredientUnit } = window.parseIngredientKey(key);
-            const selectedUnitWithParentheses = `(${ingredientUnit})`;
-            const isCustomUnit = !UNITS.includes(selectedUnitWithParentheses) && ingredientUnit !== '';
+            
+            // Sửa logic: đảm bảo (g) là 'g' chứ không phải 'g)'
+            const selectedUnit = ingredientUnit; 
+            const isCustomUnit = !UNITS.includes(selectedUnit) && selectedUnit !== '';
             
             // HTML cho input tên nguyên liệu với dropdown
             const ingredientInputHTML = `
@@ -1005,12 +1159,12 @@
                 <div class="flex flex-col space-y-2 sm:space-y-0 w-full sm:w-48">
                     <select onchange="window.handleUnitChange(this)" class="p-2 border rounded-md ingredient-unit focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
                         ${UNITS.map(unit => 
-                            `<option value="${unit}" ${!isCustomUnit && unit === selectedUnitWithParentheses ? 'selected' : (isCustomUnit && unit === '(Khác)' ? 'selected' : '')}>${unit.replace(/[()]/g, '')}</option>`
+                            `<option value="${unit}" ${!isCustomUnit && unit === selectedUnit ? 'selected' : (isCustomUnit && unit === '(Khác)' ? 'selected' : '')}>${unit.replace(/[()]/g, '')}</option>`
                         ).join('')}
                     </select>
                     
                     <div class="custom-unit-container ${isCustomUnit ? 'block' : 'hidden'} mt-1 pt-1">
-                        <input type="text" placeholder="Nhập Đơn vị" value="${isCustomUnit ? ingredientUnit : ''}" class="custom-unit-input p-2 border rounded-md w-full text-xs">
+                        <input type="text" placeholder="Nhập Đơn vị" value="${isCustomUnit ? selectedUnit : ''}" class="custom-unit-input p-2 border rounded-md w-full text-xs">
                     </div>
                 </div>
 
@@ -1053,7 +1207,7 @@
         
         // Hàm mới để hỗ trợ xóa (ghi đè toàn bộ)
         window.dbModule.saveNormsAfterDelete = async function(updatedNorms) {
-            const appId = window.firebaseConfig.projectId || 'default-app-id'; 
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; 
             const docRef = doc(window.db, "artifacts", appId, "public/data/norms/master_list");
             await setDoc(docRef, { norms: updatedNorms }, { merge: false }); // merge: false = ghi đè
         }
@@ -1135,24 +1289,12 @@
         window.selectNormDish = function(dishName, isNew = false) {
             document.getElementById('norm-dish-search').value = dishName;
             document.getElementById('norm-dish-options').classList.add('hidden'); 
-            window.loadNormsForm(dishName); 
+            window.loadNormsForm(dishName); // Tên gốc (editingDishName) được set ở đây
         }
         
         // --- LOGIC TÌM KIẾM VÀ CHỌN MÓN ĂN TRONG THỰC ĐƠN ---
-
-        window.removeVietnameseDiacritics = function(str) {
-            if (typeof str !== 'string') return '';
-            str = str.toLowerCase();
-            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
-            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
-            str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
-            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
-            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
-            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
-            str = str.replace(/đ/g, "d");
-            str = str.replace(/\s+/g, ' ').trim();
-            return str;
-        }
+        
+        // === BỔ SUNG CÁC HÀM BỊ THIẾU ===
 
         window.renderSearchableDishList = function() {
             const listContainer = document.getElementById('dish-options-list');
@@ -1224,7 +1366,6 @@
             document.getElementById('menu-dish-select').value = dishName;
             document.getElementById('dish-options-list').classList.add('hidden'); 
         }
-
 
         // --- LOGIC XỬ LÝ THỰC ĐƠN NGÀY (DAILY MENU) ---
         
@@ -1299,6 +1440,278 @@
             window.calculateAndRenderResults();
         }
 
+        // === HÀM BỊ THIẾU: XỬ LÝ IMPORT EXCEL ===
+        window.handleFileUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                // Chuyển sheet thành JSON
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                let addedCount = 0;
+                let skippedCount = 0;
+                let errorMessages = [];
+
+                if (json.length === 0) {
+                    window.showMessage("File Excel trống hoặc không đọc được.", 'error');
+                    event.target.value = null; // Reset input
+                    return;
+                }
+
+                json.forEach((row, index) => {
+                    // Cố gắng tìm tên cột linh hoạt (viết hoa/thường, có/không dấu)
+                    // Tìm cột chứa 'mon an' và 'so suat'
+                    const dishKey = Object.keys(row).find(k => window.removeVietnameseDiacritics(k).includes("mon an"));
+                    const servingsKey = Object.keys(row).find(k => window.removeVietnameseDiacritics(k).includes("so suat"));
+
+                    if (!dishKey || !servingsKey) {
+                        if (index === 0) { // Chỉ báo lỗi này một lần
+                             errorMessages.push("Lỗi: File phải có cột 'Tên Món Ăn' và 'Số Suất'.");
+                        }
+                        skippedCount++;
+                        return;
+                    }
+                    
+                    const dishName = String(row[dishKey]).trim();
+                    const servings = parseInt(row[servingsKey]);
+
+                    // Kiểm tra dữ liệu
+                    if (!dishName || isNaN(servings) || servings <= 0) {
+                        skippedCount++;
+                        errorMessages.push(`Lỗi dòng ${index + 2}: Dữ liệu không hợp lệ. (${dishName}, ${row[servingsKey]})`);
+                        return;
+                    }
+
+                    // Kiểm tra món ăn có trong định mức không
+                    if (!(dishName in window.norms)) {
+                        skippedCount++;
+                        errorMessages.push(`Lỗi dòng ${index + 2}: Món '${dishName}' không có trong Định Mức.`);
+                        return;
+                    }
+
+                    // Thêm vào thực đơn (cộng dồn nếu đã tồn tại)
+                    const existingItem = dailyMenu.find(item => item.dish === dishName);
+                    if (existingItem) {
+                        existingItem.servings += servings;
+                    } else {
+                        dailyMenu.push({ dish: dishName, servings: servings });
+                    }
+                    addedCount++;
+                });
+
+                // Cập nhật UI và thông báo
+                if (addedCount > 0) {
+                    saveDataLocal();
+                    window.renderMenu();
+                    window.calculateAndRenderResults();
+                    window.showMessage(`Đã import ${addedCount} món ăn. Bỏ qua ${skippedCount} dòng.`);
+                } else {
+                    window.showMessage(`Không import được món nào. Bỏ qua ${skippedCount} dòng.`, 'error');
+                }
+
+                if (errorMessages.length > 0) {
+                    // Hiển thị 3 lỗi đầu tiên để tránh tràn màn hình
+                    window.showMessage(errorMessages.slice(0, 3).join('; '), 'warning');
+                    console.warn("Lỗi Import Excel:", errorMessages.join('\n'));
+                }
+
+                // Reset file input để có thể chọn lại file tương tự
+                event.target.value = null;
+            };
+            
+            reader.onerror = function(e) {
+                window.showMessage("Lỗi khi đọc file.", 'error');
+                event.target.value = null;
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+        // === KẾT THÚC BỔ SUNG ===
+
+        window.removeVietnameseDiacritics = function(str) {
+            if (typeof str !== 'string') return '';
+            str = str.toLowerCase();
+            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+            str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+            str = str.replace(/đ/g, "d");
+            str = str.replace(/\s+/g, ' ').trim();
+            return str;
+        }
+
+        // === HÀM MỚI: LẤY DANH SÁCH NGUYÊN LIỆU DUY NHẤT KÈM ĐƠN VỊ ===
+        function getUniqueIngredientsWithUnits() {
+            const ingredientSet = new Set();
+            // Lặp qua tất cả các món ăn
+            Object.values(window.norms).forEach(dishNorms => {
+                // Lặp qua tất cả các key nguyên liệu (ví dụ: "Thịt (g)")
+                Object.keys(dishNorms).forEach(key => ingredientSet.add(key));
+            });
+            // Sắp xếp
+            const sortedIngredients = Array.from(ingredientSet).sort((a, b) => a.localeCompare(b, 'vi'));
+            // Chuyển đổi thành object { name, unit }
+            return sortedIngredients.map(key => {
+                const { name, unit } = window.parseIngredientKey(key);
+                return { "Tên Nguyên Liệu": name, "Đơn Vị": unit };
+            });
+        }
+        // === KẾT THÚC HÀM MỚI ===
+
+        // === HÀM MỚI: EXPORT DANH SÁCH MÓN ĂN ===
+        window.exportDishList = function() {
+            const dishNames = Object.keys(window.norms).sort((a, b) => a.localeCompare(b, 'vi'));
+            
+            if (dishNames.length === 0) {
+                window.showMessage("Không có món ăn nào trong định mức để xuất.", 'warning');
+                return;
+            }
+            
+            // Chuyển thành định dạng JSON cho SheetJS
+            const data = dishNames.map(name => ({ "Tên Món Ăn": name }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Danh Sách Món Ăn");
+            // Ghi file
+            XLSX.writeFile(wb, "Danh_Sach_Mon_An.xlsx");
+            window.showMessage("Đã xuất Danh Sách Món Ăn thành công!");
+        }
+
+        // === HÀM MỚI: EXPORT DANH SÁCH NGUYÊN LIỆU ===
+        window.exportIngredientList = function() {
+            const ingredients = getUniqueIngredientsWithUnits(); // Sử dụng hàm helper mới
+            
+            if (ingredients.length === 0) {
+                window.showMessage("Không có nguyên liệu nào trong định mức để xuất.", 'warning');
+                return;
+            }
+            
+            // Dữ liệu đã ở đúng định dạng
+            const ws = XLSX.utils.json_to_sheet(ingredients);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Danh Sách Nguyên Liệu");
+            // Ghi file
+            XLSX.writeFile(wb, "Danh_Sach_Nguyen_Lieu.xlsx");
+            window.showMessage("Đã xuất Danh Sách Nguyên Liệu thành công!");
+        }
+
+        // === HÀM MỚI: EXPORT TOÀN BỘ ĐỊNH MỨC ===
+        window.exportFullNorms = function() {
+            const dataToExport = [];
+            
+            // Sắp xếp theo tên món ăn
+            const dishNames = Object.keys(window.norms).sort((a, b) => a.localeCompare(b, 'vi'));
+
+            dishNames.forEach(dishName => {
+                const ingredients = window.norms[dishName];
+                // Sắp xếp theo tên nguyên liệu
+                const ingKeys = Object.keys(ingredients).sort((a, b) => a.localeCompare(b, 'vi'));
+                
+                ingKeys.forEach(ingKey => {
+                    const quantity = ingredients[ingKey];
+                    const { name: ingName, unit: ingUnit } = window.parseIngredientKey(ingKey);
+                    
+                    dataToExport.push({
+                        "Tên Món Ăn": dishName,
+                        "Tên Nguyên Liệu": ingName,
+                        "Đơn Vị": ingUnit,
+                        "Định Mức": quantity
+                    });
+                });
+            });
+
+            if (dataToExport.length === 0) {
+                window.showMessage("Không có dữ liệu định mức nào để xuất.", 'warning');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            // Tự động điều chỉnh độ rộng cột
+            ws['!cols'] = [ { wch: 30 }, { wch: 25 }, { wch: 10 }, { wch: 10 } ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Toàn Bộ Định Mức");
+            // Ghi file
+            XLSX.writeFile(wb, "Toan_Bo_Dinh_Muc.xlsx");
+            window.showMessage("Đã xuất Toàn Bộ Định Mức thành công!");
+        }
+        // === KẾT THÚC CÁC HÀM EXPORT ===
+
+        // === THÊM MỚI: HÀM EXPORT THỰC ĐƠN NGÀY ===
+        window.exportDailyMenu = function() {
+            const dateInput = document.getElementById('menu-date');
+            const menuDate = dateInput.value || new Date().toISOString().split('T')[0];
+
+            if (dailyMenu.length === 0) {
+                window.showMessage("Không có món ăn nào trong thực đơn ngày để xuất.", 'warning');
+                return;
+            }
+
+            // Chuyển thành định dạng JSON cho SheetJS
+            const data = dailyMenu.map(item => ({ 
+                "Tên Món Ăn": item.dish, 
+                "Số Suất": item.servings 
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws['!cols'] = [ { wch: 40 }, { wch: 15 } ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, `Thuc Don ${menuDate}`);
+            
+            // Ghi file
+            XLSX.writeFile(wb, `Thuc_Don_${menuDate}.xlsx`);
+            window.showMessage("Đã xuất Thực Đơn Ngày thành công!");
+        }
+
+        // === THÊM MỚI: CÁC HÀM IN ===
+        function printSection(sectionClass) {
+            document.body.classList.add(sectionClass);
+            window.print();
+            // Sử dụng setTimeout để đảm bảo việc xóa class diễn ra sau khi lệnh in hoàn tất
+            setTimeout(() => {
+                document.body.classList.remove(sectionClass);
+            }, 500);
+        }
+
+        window.printDailyMenu = function() {
+            if (dailyMenu.length === 0) {
+                window.showMessage("Không có gì trong thực đơn để in.", 'warning');
+                return;
+            }
+            // Ẩn các phần không cần thiết khác
+            document.getElementById('norms-section').classList.add('no-print');
+            document.getElementById('results-section').classList.add('no-print');
+            document.getElementById('daily-menu-section').classList.remove('no-print');
+            
+            printSection('printing-menu');
+        }
+
+        window.printResults = function() {
+             const totalIngredients = window.calculateTotalIngredients();
+             if (Object.keys(totalIngredients).length === 0) {
+                window.showMessage("Không có nguyên liệu nào để in.", 'warning');
+                return;
+            }
+            // Ẩn các phần không cần thiết khác
+            document.getElementById('norms-section').classList.add('no-print');
+            document.getElementById('daily-menu-section').classList.add('no-print');
+            document.getElementById('results-section').classList.remove('no-print');
+            
+            printSection('printing-results');
+        }
+        // === KẾT THÚC HÀM IN ===
+
         window.renderMenu = function() {
             const tableBody = document.getElementById('daily-menu-table-body');
             tableBody.innerHTML = '';
@@ -1314,27 +1727,44 @@
                 
                 // TÍNH TOÁN TỔNG CHO TỪNG MÓN
                 const normData = window.norms[item.dish];
-                let dishNormsHtml = '';
+                // === BẮT ĐẦU CHỈNH SỬA ===
+                let normHtml = '';
+                let totalHtml = '';
                 
                 if (!normData) {
-                    dishNormsHtml = '<span class="text-red-500 italic">Thiếu Định Mức</span>';
+                    normHtml = '<span class="text-red-500 italic">Thiếu Định Mức</span>';
+                    totalHtml = '<span class="text-red-500 italic">Không thể tính tổng</span>';
                 } else {
-                    dishNormsHtml = Object.entries(normData).map(([ingKey, qty]) => {
+                    const normParts = [];
+                    const totalParts = [];
+
+                    Object.entries(normData).forEach(([ingKey, qty]) => {
                         const { name, unit } = window.parseIngredientKey(ingKey);
-                        const totalQty = qty * item.servings;
                         
-                        // ÁP DỤNG QUY ĐỔI CHO TỔNG
+                        // 1. Chuỗi định mức
+                        normParts.push(`${name}: ${qty} ${unit}`);
+                        
+                        // 2. Chuỗi tổng (đã có tính toán)
+                        const totalQty = qty * item.servings;
                         const { convertedQuantity, convertedUnit } = window.getConvertedUnit(unit, totalQty);
                         const displayTotalQty = Number.isInteger(convertedQuantity) ? convertedQuantity.toLocaleString('vi-VN') : convertedQuantity.toFixed(2).toLocaleString('vi-VN');
                         
-                        return `<span class="inline-block text-xs text-gray-600 mr-2">${name}: ${qty} ${unit} <strong class="text-blue-600">(Tổng: ${displayTotalQty} ${convertedUnit})</strong></span>`;
-                    }).join(' | ');
+                        totalParts.push(`${name}: <strong class="text-blue-700">${displayTotalQty} ${convertedUnit}</strong>`);
+                    });
+
+                    normHtml = normParts.join(' | ');
+                    totalHtml = totalParts.join(' | ');
                 }
 
                 row.innerHTML = `
                     <td class="px-3 sm:px-6 py-3 text-sm font-medium text-gray-900">
                         ${item.dish}
-                        <div class="text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">${dishNormsHtml}</div>
+                        <div class="text-xs text-gray-500 mt-1 pt-1 border-t border-gray-100">
+                            <span class="font-semibold text-gray-600">Định mức:</span> ${normHtml}
+                        </div>
+                        <div class="text-xs text-blue-600 mt-1">
+                            <span class="font-semibold">Tổng NL:</span> ${totalHtml}
+                        </div>
                     </td>
                     <td class="px-3 sm:px-6 py-3">
                         <input type="number" 
@@ -1483,5 +1913,4 @@
 
 </body>
 </html>
-
 
