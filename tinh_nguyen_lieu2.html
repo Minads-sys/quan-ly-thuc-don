@@ -10,7 +10,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Tải Firebase SDKs (Module Imports) -->
-    <!-- Thay thế bằng các đường dẫn SDK mới nhất nếu cần -->
     <script type="module">
         // Import các hàm bạn cần từ SDKs
         // SỬA LỖI: Import toàn bộ module để gán vào window
@@ -21,9 +20,12 @@
         // Gán module vào window để script ở body có thể dùng
         window.firebaseAppModule = firebaseAppModule;
         window.firebaseAuthModule = firebaseAuthModule;
+        // SỬA LỖI (Đã thêm dòng này):
+        window.firebaseFirestoreModule = firebaseFirestoreModule; 
 
         // --- CẤU HÌNH FIREBASE CỦA BẠN (ĐÃ ĐƯỢC THÊM) ---
         // Cấu hình ứng dụng web Firebase của bạn
+        // SỬA LỖI: Gán vào window để script ở body có thể dùng
         window.firebaseConfig = {
           apiKey: "AIzaSyD1W08tbeT1durWvUj2i6BoRyCtrT9eXtE",
           authDomain: "quan-ly-thuc-don.firebaseapp.com",
@@ -36,7 +38,7 @@
         // ---------------------------------------------
 
         // Khởi tạo Firebase và các dịch vụ
-        window.firebaseApp = firebaseAppModule.initializeApp(firebaseConfig);
+        window.firebaseApp = firebaseAppModule.initializeApp(window.firebaseConfig);
         window.db = firebaseFirestoreModule.getFirestore(window.firebaseApp);
         window.auth = firebaseAuthModule.getAuth(window.firebaseApp);
 
@@ -316,11 +318,12 @@
         // SỬA LỖI: Lấy các hàm từ các module đã gán vào window
         const { initializeApp } = window.firebaseAppModule; 
         const { getAuth, signInAnonymously } = window.firebaseAuthModule;
+        // SỬA LỖI: Đảm bảo firebaseFirestoreModule đã được gán (đã sửa ở head)
         const { getFirestore, doc, onSnapshot, setDoc, enableNetwork } = window.firebaseFirestoreModule;
 
         // --- CẤU HÌNH FIREBASE (LẤY TỪ <HEAD>) ---
-        // Biến firebaseConfig và firebaseApp đã được khởi tạo trong <head>
-        // và được gắn vào window (window.firebaseApp, window.db, window.auth)
+        // Biến window.firebaseConfig đã được khởi tạo trong <head>
+        // Biến window.db và window.auth cũng đã được khởi tạo trong <head>
         
         // --- CƠ SỞ DỮ LIỆU VÀ ĐỊNH NGHĨA ---
         
@@ -402,6 +405,7 @@
 
         // --- MODULE XỬ LÝ DATABASE (FIRESTORE) ---
         window.dbModule = (function() {
+            // SỬA LỖI: Truy cập window.firebaseConfig
             const appId = window.firebaseConfig.projectId || 'default-app-id'; 
             const docRef = doc(window.db, "artifacts", appId, "public/data/norms/master_list");
 
@@ -512,8 +516,11 @@
 
                 } catch (error) {
                     console.error("Lỗi khi tải Firestore: ", error);
-                    statusDiv.textContent = `Lỗi kết nối Firestore. Đang dùng dữ liệu cục bộ (Offline). ${error.message}`;
-                    statusDiv.className = 'text-center p-2 text-sm text-red-600 italic';
+                    // SỬA LỖI: Kiểm tra statusDiv trước khi gán
+                    if (statusDiv) {
+                        statusDiv.textContent = `Lỗi kết nối Firestore. Đang dùng dữ liệu cục bộ (Offline). ${error.message}`;
+                        statusDiv.className = 'text-center p-2 text-sm text-red-600 italic';
+                    }
                     // Tải dữ liệu cục bộ nếu không kết nối được
                     window.norms = JSON.parse(localStorage.getItem('norms')) || DEFAULT_NORMS;
                     window.renderAll();
@@ -545,9 +552,12 @@
                 if (error.code === 'auth/admin-restricted-operation' || error.code === 'auth/operation-not-allowed') {
                     userMessage = "LỖI KẾT NỐI: Đăng nhập Ẩn danh (Anonymous Auth) CHƯA ĐƯỢC BẬT. Vui lòng bật trong Firebase Console -> Authentication -> Sign-in method.";
                 }
-
-                statusDiv.textContent = userMessage;
-                statusDiv.className = 'text-center p-2 text-sm text-red-600 italic';
+                
+                // SỬA LỖI: Kiểm tra statusDiv trước khi gán
+                if (statusDiv) {
+                    statusDiv.textContent = userMessage;
+                    statusDiv.className = 'text-center p-2 text-sm text-red-600 italic';
+                }
                 
                 // Nếu xác thực lỗi, dùng LocalStorage
                 window.norms = JSON.parse(localStorage.getItem('norms')) || DEFAULT_NORMS;
@@ -1315,7 +1325,7 @@
                         
                         // ÁP DỤNG QUY ĐỔI CHO TỔNG
                         const { convertedQuantity, convertedUnit } = window.getConvertedUnit(unit, totalQty);
-                        const displayTotalQty = Number.isInteger(convertedQuantity) ? convertedQuantity : convertedQuantity.toFixed(2);
+                        const displayTotalQty = Number.isInteger(convertedQuantity) ? convertedQuantity.toLocaleString('vi-VN') : convertedQuantity.toFixed(2).toLocaleString('vi-VN');
                         
                         return `<span class="inline-block text-xs text-gray-600 mr-2">${name}: ${qty} ${unit} <strong class="text-blue-600">(Tổng: ${displayTotalQty} ${convertedUnit})</strong></span>`;
                     }).join(' | ');
@@ -1473,5 +1483,4 @@
 
 </body>
 </html>
-
 
